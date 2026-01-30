@@ -37,6 +37,9 @@ class MainActivity : AppCompatActivity() {
 
     private val job = Job()
     private val uiScope = CoroutineScope(Dispatchers.Main + job)
+    
+    // Track active search job to allow cancellation
+    private var searchJob: Job? = null
 
     // Hard-coded from your setup
     private val JACKETT_BASE_URL = "http://192.168.1.175:9117"
@@ -276,10 +279,13 @@ class MainActivity : AppCompatActivity() {
             return
         }
         
+        // Cancel any previous search
+        searchJob?.cancel()
+        
         binding.textStatus.text = "🎬 Searching ${sites.size} video sites for \"$query\"..."
         videoAdapter?.updateData(emptyList())
         
-        uiScope.launch(Dispatchers.IO) {
+        searchJob = uiScope.launch(Dispatchers.IO) {
             try {
                 val result = videoSearchService.searchAll(query, 100)
                 
@@ -487,10 +493,13 @@ class MainActivity : AppCompatActivity() {
         val searchType = if (useSmartSearch) "Smart Search" else "Standard"
         val dlFilter = if (downloadableOnly) " (DL)" else ""
         
+        // Cancel any previous search
+        searchJob?.cancel()
+        
         binding.textStatus.text = "Searching $source ($searchType$dlFilter) for \"$query\"..."
         adapter?.updateData(emptyList())
 
-        uiScope.launch(Dispatchers.IO) {
+        searchJob = uiScope.launch(Dispatchers.IO) {
             try {
                 val allResults = mutableSetOf<TorrentResult>()
                 val service = if (source == Source.JACKETT) jackettService else prowlarrService
@@ -533,6 +542,9 @@ class MainActivity : AppCompatActivity() {
                             "Search OK on $source ($searchType) | ${results.size} result(s)."
                     }
                 }
+            } catch (e: CancellationException) {
+                // Search was cancelled, this is expected - don't show error
+                throw e
             } catch (e: Exception) {
                 e.printStackTrace()
                 launch(Dispatchers.Main) {
@@ -548,10 +560,14 @@ class MainActivity : AppCompatActivity() {
     private fun performAggregatedSearch(query: String) {
         val downloadableOnly = binding.toggleDownloadableOnly.isChecked
         val filterText = if (downloadableOnly) " (DL only)" else ""
+        
+        // Cancel any previous search
+        searchJob?.cancel()
+        
         binding.textStatus.text = "Searching all sources$filterText for \"$query\"..."
         adapter?.updateData(emptyList())
 
-        uiScope.launch(Dispatchers.IO) {
+        searchJob = uiScope.launch(Dispatchers.IO) {
             try {
                 val prefs = getSharedPreferences("prefs", MODE_PRIVATE)
                 val includeOnion = prefs.getBoolean("enable_onion_sites", false)
@@ -591,6 +607,9 @@ class MainActivity : AppCompatActivity() {
                         true
                     }
                 }
+            } catch (e: CancellationException) {
+                // Search was cancelled, this is expected - don't show error
+                throw e
             } catch (e: Exception) {
                 e.printStackTrace()
                 launch(Dispatchers.Main) {
