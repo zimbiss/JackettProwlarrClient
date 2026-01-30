@@ -8,6 +8,8 @@ A powerful Android BitTorrent client that uses the Torznab API to search and dow
 
 ## 📥 Download APK
 
+> **🆕 First time using GitHub Actions?** Check out the **[📦 Complete APK Download Guide](GITHUB_ACTIONS_GUIDE.md)** for step-by-step instructions!
+
 ### 🚀 Latest Build (Always Up-to-Date)
 **[📦 Download Latest Debug APK](https://nightly.link/zimbiss/JackettProwlarrClient/workflows/build-apk/main/JackettProwlarr-debug-v1.0.zip)**
 
