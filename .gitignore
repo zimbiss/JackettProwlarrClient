@@ -1,5 +1,5 @@
 # Built application files
-*.apk
+# *.apk (commented out to allow committing APK)
 *.ap_
 *.aab
 
